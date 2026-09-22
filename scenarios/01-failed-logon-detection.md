@@ -22,7 +22,13 @@ The goals of this scenario were to:
 - Practice basic SOC investigation methodology
 
 ---
+## Detection Evidence
 
+The Wazuh Threat Hunting interface was filtered using the `authentication_failed` rule group. The query returned the two controlled failed logon attempts generated during the lab.
+
+![Wazuh authentication failure detection](../screenshots/failed-logon/failed-logon.png)
+
+*Figure 1 — Wazuh detected two failed authentication attempts on the Windows 11 endpoint. Both events matched rule 60122 with severity level 5.*
 ## Detection Workflow
 
 ```text
@@ -45,3 +51,37 @@ Wazuh Rule 60122
         │
         ▼
 Threat Hunting / SOC Investigation
+```
+
+---
+
+## Event Analysis
+
+After identifying the failed authentication alerts, I opened one of the events in Wazuh Document Details to investigate the underlying Windows telemetry.
+
+![Wazuh failed logon event details](../screenshots/failed-logon/event-details.png)
+
+*Figure 2 — Wazuh Document Details showing telemetry associated with the failed authentication event.*
+
+### Key Fields Investigated
+
+The event contained several fields useful during a SOC investigation:
+
+| Field | Observed Value | Meaning |
+|---|---|---|
+| Authentication Package | `Negotiate` | Windows selected an available authentication protocol |
+| Source IP | `127.0.0.1` | The attempt originated from the local machine |
+| Logon Process | `User32` | Associated with an interactive Windows logon |
+| Logon Type | `2` | Interactive/local logon |
+| Process | `C:\Windows\System32\svchost.exe` | Windows Service Host process |
+| Status | `0xc000006d` | Authentication/logon failure |
+| Windows Event ID | `4625` | Windows recorded a failed logon attempt |
+| Wazuh Rule | `60122` | Wazuh rule that identified the event as a failed authentication attempt |
+
+## Analyst Assessment
+
+Because these two failed authentication attempts were intentionally generated as part of the lab, the activity was expected and benign.
+
+However, in a real SOC environment, similar events would require additional context. An analyst could investigate the number and frequency of failures, the targeted account, source system or IP address, subsequent successful logons, and whether the activity deviates from normal user behavior.
+
+This exercise demonstrated the difference between simply receiving a SIEM alert and investigating the telemetry behind that alert.
